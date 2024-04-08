@@ -5,19 +5,20 @@
 
 #include "build_tree.h"
 
-int get_str(char s[], int lim) {
+static int get_str(char s[], int lim) {
   int c, i;
 
-  for (i = 0; i < lim - 1 && (c = getchar()) != EOF && c != '\n'; ++i) s[i] = c;
+  for (i = 0; i < lim - 1 && (c = getchar()) != EOF && c != '\n'; ++i)
+    s[i] = ((char)c);
   s[i] = '\0';
 
   return i;
 }
 
-void postorder(node_t *root) {
+static void __postorder(const node_t *root) {
   if (root) {
-    postorder(root->left);
-    postorder(root->right);
+    __postorder(root->left);
+    __postorder(root->right);
     if (root->type == UNARYOP || root->type == BINARYOP)
       printf("%s", optable[root->data].symbol);
     else if (root->type == VAR)
@@ -25,6 +26,36 @@ void postorder(node_t *root) {
     else
       printf("%d", root->data);
   }
+}
+
+static void __print_2D_util(const node_t *node, const int space) {
+  // Base case
+  if (node == NULL) return;
+
+  // Process right child first
+  __print_2D_util(node->right, space + 1);
+
+  // Print current node
+  for (int i = 0; i < space; i++) printf("   ");
+  switch (node->type) {
+    case VAR:
+      printf("%c\n", 'a' + node->data);
+      break;
+    case REG:
+      break;
+    case CONST:
+      printf("%d\n", node->data);
+      break;
+    case UNARYOP:
+    case BINARYOP:
+      printf("%s\n", optable[node->data].symbol);
+      break;
+    default:
+      printf("ERROR: Invalid node type\n");
+  }
+
+  // Process left child
+  __print_2D_util(node->left, space + 1);
 }
 
 int main(void) {
@@ -41,9 +72,12 @@ int main(void) {
 
     printf("Postfix: ");
 
-    postorder(root);
-
+    __postorder(root);
     printf("\n");
+
+    printf("AST:\n");
+    __print_2D_util(root, 0);
+
     root = generate_code(root);
 
     if (root->type == REG)

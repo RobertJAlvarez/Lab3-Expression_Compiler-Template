@@ -3,6 +3,10 @@
 
 #include "build_tree.h"
 
+#define SET_NODE(NODE, TYPE, DATA) \
+  NODE->type = TYPE;               \
+  NODE->data = DATA;
+
 int regtable[NUMREG];  // reg[i] contains current number of uses of register i
 int vartable[NUMVAR];  // var[i] contains register to which var is assigned
 
@@ -14,19 +18,20 @@ void init_vartable(void) {
   for (int i = 0; i < NUMVAR; i++) vartable[i] = -1;
 }
 
-int reuse_reg(int reg) {
+static int __reuse_reg(const int reg) {
   if (regtable[reg] == 1) return 1;
   if (regtable[reg] > 1) return 0;
 
-  fprintf(stderr, "Error: called reuse_reg on unused register\n");
+  fprintf(stderr, "Error: called __reuse_reg on unused register\n");
 
   // shouldn't happen
   return -1;
 }
 
-int assign_reg(int var) {
+int assign_reg(const int var) {
   if ((var != -1) && (vartable[var] != -1)) {
-    regtable[vartable[var]]++;  // variable is already assigned a register
+    // variable is already assigned a register
+    regtable[vartable[var]]++;
     return vartable[var];
   }
 
@@ -45,7 +50,7 @@ int assign_reg(int var) {
   return -1;
 }
 
-int release_reg(int reg) {
+static int __release_reg(const int reg) {
   if (regtable[reg] > 0) {
     regtable[reg]--;
     return 0;
@@ -69,10 +74,55 @@ void printvartable(void) {
       printf("variable: %c, register: x%d\n", 'a' + i, vartable[i]);
 }
 
+static void __reg_reg(node_t *root, node_t *left, node_t *right) {
+  int destreg;
+
+  if (__reuse_reg(left->data) == 1) {
+    destreg = left->data;
+    __release_reg(right->data);
+  } else if (__reuse_reg(right->data) == 1) {
+    destreg = right->data;
+    __release_reg(left->data);
+  } else {
+    destreg = assign_reg(-1);
+    if (destreg == -1) {
+      printf("Error: out of registers\n");
+      exit(-1);
+    }
+    __release_reg(left->data);
+    __release_reg(right->data);
+  }
+  printf("%s x%d, x%d, x%d\n", optable[root->data].instr, destreg, left->data,
+         right->data);
+  free(left);
+  free(right);
+  SET_NODE(root, REG, destreg);
+}
+
+static void __unary_op(node_t *root, node_t *left) {
+  int destreg;
+
+  if (root->data == UMINUS) {
+    if (left->type == REG) {
+      if (__reuse_reg(left->data)) {
+        destreg = left->data;
+      } else {
+        destreg = assign_reg(-1);
+        if (destreg == -1) {
+          printf("Error: out of registers\n");
+          exit(-1);
+        }
+        __release_reg(left->data);
+      }
+      printf("sub x%d, x0, x%d\n", destreg, left->data);
+      free(left);
+      SET_NODE(root, REG, destreg);
+    }
+  }
+}
+
 node_t *generate_code(node_t *root) {
   node_t *left, *right;
-  char instr[20];
-  int destreg;
 
   if (root) {
     if (root->left) left = generate_code(root->left);
@@ -80,54 +130,16 @@ node_t *generate_code(node_t *root) {
     if (root->right) right = generate_code(root->right);
 
     // if (root->type == REG) do nothing
+
     if (root->type == VAR) {
       root->type = REG;
       root->data = vartable[root->data];
     } else if (root->type == BINARYOP) {
       if ((left->type == REG) && (right->type == REG)) {
-        if (reuse_reg(left->data) == 1) {
-          destreg = left->data;
-          release_reg(right->data);
-        } else if (reuse_reg(right->data) == 1) {
-          destreg = right->data;
-          release_reg(left->data);
-        } else {
-          destreg = assign_reg(-1);
-          if (destreg == -1) {
-            printf("Error: out of registers\n");
-            exit(-1);
-          }
-          release_reg(left->data);
-          release_reg(right->data);
-        }
-        sprintf(instr, "%s  x%d, x%d, x%d", optable[root->data].instr, destreg,
-                left->data, right->data);
-        printf("%s\n", instr);
-        free(left);
-        free(right);
-        root->type = REG;
-        root->data = destreg;
+        __reg_reg(root, left, right);
       }
     } else if (root->type == UNARYOP) {
-      if (root->data == UMINUS) {
-        if (left->type == REG) {
-          if (reuse_reg(left->data)) {
-            destreg = left->data;
-          } else {
-            destreg = assign_reg(-1);
-            if (destreg == -1) {
-              printf("Error: out of registers\n");
-              exit(-1);
-            }
-            release_reg(left->data);
-          }
-          sprintf(instr, "sub  x%d, x0, x%d", destreg, left->data);
-          printf("%s\n", instr);
-          free(left);
-          root->type = REG;
-          root->data = destreg;
-        }
-      }
+      __unary_op(root, left);
     }
   }
 
