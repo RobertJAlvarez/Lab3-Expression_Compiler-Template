@@ -1,0 +1,31 @@
+Expression to parse: (((a-b)*c/d*((e<<f)^((a>>b)&(c|d))))+(e-f)
+variable table -- register to which var is assigned
+variable: a, register: x5
+variable: b, register: x6
+variable: c, register: x7
+variable: d, register: x8
+variable: e, register: x9
+variable: f, register: x10
+register table -- number of uses of each register
+register: x5, uses: 2
+register: x6, uses: 2
+register: x7, uses: 2
+register: x8, uses: 2
+register: x9, uses: 2
+register: x10, uses: 2
+Postfix: ab-c*d/ef<<ab>>cd|&^*ef-+
+sub x11, x5, x6
+mul x11, x11, x7
+div x11, x11, x8
+sll x12, x9, x10
+srl x5, x5, x6
+or x7, x7, x8
+and x5, x5, x7
+xor x12, x12, x5
+mul x11, x11, x12
+sub x9, x9, x10
+add x11, x11, x9
+root: x11
+register table -- number of uses of each register
+register: x11, uses: 1
+

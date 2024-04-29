@@ -1,0 +1,24 @@
+Expression to parse: ((a<<3)+4)*((i^8)/99)>>((a-3)+(i/7))<<1
+variable table -- register to which var is assigned
+variable: a, register: x5
+variable: i, register: x6
+register table -- number of uses of each register
+register: x5, uses: 2
+register: x6, uses: 2
+Postfix: a3<<4+i8^99/*a3-i7/+>>1<<
+slli x7, x5, 3
+addi x7, x7, 4
+xori x8, x6, 8
+addi x9, x0, 99
+div x8, x8, x9
+mul x7, x7, x8
+addi x5, x5, -3
+addi x8, x0, 7
+div x6, x6, x8
+add x5, x5, x6
+srl x7, x7, x5
+slli x7, x7, 1
+root: x7
+register table -- number of uses of each register
+register: x7, uses: 1
+

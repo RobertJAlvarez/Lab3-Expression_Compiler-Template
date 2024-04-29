@@ -1,0 +1,7 @@
+Expression to parse: (((3-2)+2*(5/4))<<7)+(90>>(2|1))&99
+variable table -- register to which var is assigned
+register table -- number of uses of each register
+Postfix: 32-254/*+7<<9021|>>+99&
+root: 3
+register table -- number of uses of each register
+

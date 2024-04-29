@@ -1,0 +1,16 @@
+Expression to parse: ((~c)*(-3))&((~0)+(-c))
+variable table -- register to which var is assigned
+variable: c, register: x5
+register table -- number of uses of each register
+register: x5, uses: 2
+Postfix: c~3-*0~c-+&
+xori x6, x5, -1
+addi x7, x0, -3
+mul x6, x6, x7
+sub x5, x0, x5
+addi x5, x5, -1
+and x6, x6, x5
+root: x6
+register table -- number of uses of each register
+register: x6, uses: 1
+

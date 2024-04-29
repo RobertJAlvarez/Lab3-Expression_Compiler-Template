@@ -5,6 +5,9 @@ make clean all
 
 # Check if the compile executable exists
 if [ -f "compile" ]; then
+  # Copy all input/output files
+  cp txt_files/* .
+
   # Iterate over input files
   for input_file in input*.txt; do
     # Extract suffix from input file name
