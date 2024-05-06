@@ -3,6 +3,9 @@
 
 #include "build_tree.h"
 
+#define NUMREG 32
+#define NUMVAR 10
+
 #define SET_NODE(NODE, TYPE, DATA) \
   NODE->type = TYPE;               \
   NODE->data = DATA;
@@ -74,74 +77,90 @@ void printvartable(void) {
       printf("variable: %c, register: x%d\n", 'a' + i, vartable[i]);
 }
 
-static void __reg_reg(node_t *root, node_t *left, node_t *right) {
+static const char *__get_instr(const ops_t op) {
+  const static struct {
+    ops_t op;
+    const char *instr;
+  } conversion[] = {
+      {ADD, "add"}, {SUB, "sub"}, {MUL, "mul"}, {DIV, "div"}, {AND, "and"},
+      {OR, "or"},   {XOR, "xor"}, {SLL, "sll"}, {SRL, "srl"},
+  };
+
+  for (size_t i = 0; i < sizeof(conversion) / sizeof(conversion[0]); i++) {
+    if (op == conversion[i].op) return conversion[i].instr;
+  }
+
+  return "";
+}
+
+static void __reg_reg(node_t *root, const int l_data, const int r_data) {
   int destreg;
 
-  if (__reuse_reg(left->data) == 1) {
-    destreg = left->data;
-    __release_reg(right->data);
-  } else if (__reuse_reg(right->data) == 1) {
-    destreg = right->data;
-    __release_reg(left->data);
+  if (__reuse_reg(l_data) == 1) {
+    destreg = l_data;
+    __release_reg(r_data);
+  } else if (__reuse_reg(r_data) == 1) {
+    destreg = r_data;
+    __release_reg(l_data);
   } else {
     destreg = assign_reg(-1);
     if (destreg == -1) {
       printf("Error: out of registers\n");
       exit(-1);
     }
-    __release_reg(left->data);
-    __release_reg(right->data);
+    __release_reg(l_data);
+    __release_reg(r_data);
   }
-  printf("%s x%d, x%d, x%d\n", optable[root->data].instr, destreg, left->data,
-         right->data);
-  free(left);
-  free(right);
+  printf("%s x%d, x%d, x%d\n", __get_instr((ops_t)root->data), destreg, l_data,
+         r_data);
   SET_NODE(root, REG, destreg);
 }
 
-static void __unary_op(node_t *root, node_t *left) {
+static void __unary_reg(node_t *root, const int l_data) {
   int destreg;
 
   if (root->data == UMINUS) {
-    if (left->type == REG) {
-      if (__reuse_reg(left->data)) {
-        destreg = left->data;
-      } else {
-        destreg = assign_reg(-1);
-        if (destreg == -1) {
-          printf("Error: out of registers\n");
-          exit(-1);
-        }
-        __release_reg(left->data);
+    if (__reuse_reg(l_data)) {
+      destreg = l_data;
+    } else {
+      destreg = assign_reg(-1);
+      if (destreg == -1) {
+        printf("Error: out of registers\n");
+        exit(-1);
       }
-      printf("sub x%d, x0, x%d\n", destreg, left->data);
-      free(left);
-      SET_NODE(root, REG, destreg);
+      __release_reg(l_data);
     }
+    printf("sub x%d, x0, x%d\n", destreg, l_data);
+    SET_NODE(root, REG, destreg);
   }
 }
 
 node_t *generate_code(node_t *root) {
   node_t *left, *right;
 
-  if (root) {
-    if (root->left) left = generate_code(root->left);
+  if ((root == NULL) || (root->type == REG)) return root;
 
-    if (root->right) right = generate_code(root->right);
+  if (root->type == VAR) {
+    SET_NODE(root, REG, vartable[root->data]);
+    return root;
+  }
 
-    // if (root->type == REG) do nothing
+  left = generate_code(root->left);
+  right = generate_code(root->right);
 
-    if (root->type == VAR) {
-      root->type = REG;
-      root->data = vartable[root->data];
-    } else if (root->type == BINARYOP) {
-      if ((left->type == REG) && (right->type == REG)) {
-        __reg_reg(root, left, right);
-      }
-    } else if (root->type == UNARYOP) {
-      __unary_op(root, left);
+  if (root->type == BINARYOP) {
+    if ((left->type == REG) && (right->type == REG)) {
+      __reg_reg(root, left->data, right->data);
+    }
+    root->right = NULL;
+    free(right);
+  } else if (root->type == UNARYOP) {
+    if (left->type == REG) {
+      __unary_reg(root, left->data);
     }
   }
+  root->left = NULL;
+  free(left);
 
   return root;
 }
