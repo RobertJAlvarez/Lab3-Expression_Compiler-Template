@@ -1,0 +1,42 @@
+1. Makefile [12 pts]: 
+2. Power of 2:
+  * Function [6 pts]: 
+  * Tester [6 pts]: 
+  * Makefile [5 pts]: 
+3. Explanation for build_tree.c [10 pts]:
+4. Binary/Unary operators: 
+  * Reg-Const (4 cases) (dummy) [3]: 
+  * Reg-Const [3]: 
+  * Const-Reg (2 cases) (dummy) [3]: 
+  * Const-Reg [3]: 
+  * Const-Const (1 case) (dummy) [3]: 
+  * Const-Const [3]: 
+  * Unary (4 cases) (dummy) [3]: 
+  * Unary [3]: 
+5. Strong reduction: 
+  * Reg-Const (strong reduction *) [5]: 
+  * Reg-Const (strong reduction /) [5]: 
+  * Const-Reg (strong reduction *) [5]: 
+6a. LUI table [5 pts]:
+6b. Backend (5 cases) [10 pts]:
+7. Own tester [1.5 pts each]: 
+  - If have it, is right and good explanation: 1.5 pts
+  - If have it, is right and bad/no explanation: 1 pts
+  - If have it, is wrong: 0.5 pts
+  - If doesn't have it: 0 pts
+  * Variable length (any): 
+  * Reg-Const (use I-type): 
+  * Reg-Const (strong reduction */): 
+  * Reg-Const (use R-type */): 
+  * Const-Reg (any): 
+  * Const-Reg (strong reduction *): 
+  * Const-Reg (commute): 
+  * Const-Const (any): 
+  * Unary (reg): 
+  * Unary (const): 
+8. Read longer variables: 
+  * Algorithm explanation [5 pts]: 
+  * Correctness [10 pts]: 
+
+Total [123 pts]: 
+
